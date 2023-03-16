@@ -64,7 +64,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startStreaming() {
-        val serverUrl = "10.0.2.2" //localhost
+        val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
         val port = 9999
         println("111111111111")
         GlobalScope.launch(Dispatchers.IO) {
@@ -131,7 +131,7 @@ class MainActivity : AppCompatActivity() {
                                         Log.e(TAG, "Failed to outputStream Write", e)
                                     }
                                 },
-                                handler//Handler(Looper.getMainLooper())
+                                null//Handler(Looper.getMainLooper())
                             )
 
                             println("55555555")
