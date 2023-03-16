@@ -7,11 +7,16 @@ import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.TotalCaptureResult
 import android.media.ImageReader
-import android.os.*
+import android.os.Bundle
+import android.os.Handler
+import android.os.HandlerThread
+import android.os.StrictMode
 import android.os.StrictMode.ThreadPolicy
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.SurfaceView
 import android.widget.Button
+import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import kotlinx.coroutines.Dispatchers
@@ -19,14 +24,23 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.DataOutputStream
 import java.net.Socket
+import java.util.*
 
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity() , TextToSpeech.OnInitListener{
+
 
     private lateinit var camera: android.hardware.camera2.CameraDevice
     private lateinit var surfaceView: SurfaceView
     private lateinit var streamButton: Button
     private lateinit var outputStream: DataOutputStream
+
+    private lateinit var tts: TextToSpeech
+    private lateinit var ttsButton: Button
+    private lateinit var txtText: EditText
+
+
+
 
     private var isStreaming = false
 
@@ -35,10 +49,32 @@ class MainActivity : AppCompatActivity() {
         private const val CAMERA_PERMISSION_REQUEST_CODE = 100
     }
 
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+
+
+
+        //위치 권한 허용 코드(추후 블루투스연결 위한 코드)
+        val permission_list = arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+
+
+        // Initialize TextToSpeech object
+        tts = TextToSpeech(this, this)
+        txtText = findViewById(R.id.txtText);
+        ttsButton = findViewById(R.id.tts_button)
+
+        // Set ttsbutton click listener
+        ttsButton.setOnClickListener {
+            val text = txtText.getText().toString()// Text to convert to speech
+            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+        }
 
         // 권한 설정 같은 거 (소켓 쓸 때 오류 났었음)
         val policy = ThreadPolicy.Builder().permitAll().build()
@@ -62,6 +98,24 @@ class MainActivity : AppCompatActivity() {
             isStreaming = !isStreaming
         }
     }
+
+    override fun onInit(status: Int) {
+        if(status!=android.speech.tts.TextToSpeech.ERROR) {
+            tts.setLanguage(Locale.KOREAN); // Set language to Korea
+        }
+        if (status != TextToSpeech.SUCCESS) {
+            Log.e("TTS", "Initialization failed")
+        }
+    }
+    override fun onDestroy() {
+        if (tts != null) {
+            tts.stop()
+            tts.shutdown()
+        }
+        super.onDestroy()
+    }
+
+
 
     private fun startStreaming() {
         val serverUrl = "10.0.2.2" //localhost

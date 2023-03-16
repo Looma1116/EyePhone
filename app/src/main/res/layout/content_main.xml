@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
@@ -22,8 +22,35 @@
             android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true" />
 
+
+
+
     </RelativeLayout>
-<!--    <fragment-->
+    <EditText
+        android:id="@+id/txtText"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="100dp"
+        android:inputType="text"
+        android:textColor="@color/white"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.045"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/tts_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginLeft="24dp"
+        android:text="tts"
+        app:layout_constraintBottom_toBottomOf="@+id/txtText"
+        app:layout_constraintStart_toEndOf="@+id/txtText"
+        app:layout_constraintTop_toTopOf="@+id/txtText"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <!--    <fragment-->
 <!--        android:id="@+id/nav_host_fragment_content_main"-->
 <!--        android:name="androidx.navigation.fragment.NavHostFragment"-->
 <!--        android:layout_width="0dp"-->
