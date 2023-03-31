@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/main_background">
+    <ImageView
+        android:id="@+id/setting_backBtn"
+        android:layout_width="300dp"
+        android:layout_height="117dp"
+        android:src="@drawable/backbutton_img"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="30dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        />
+    <ImageView
+        android:id="@+id/setting_guardian_registerBtn"
+        android:layout_width="300dp"
+        android:layout_height="236dp"
+        android:src="@drawable/guardin_rgister_button_img"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="190dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        />
+    <ImageView
+        android:id="@+id/setting_bluetooth_onBtn"
+        android:layout_width="300dp"
+        android:layout_height="236dp"
+        android:src="@drawable/bluetooth_button_img"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="470dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        />
+    <ImageView
+        android:id="@+id/setting_bluetooth_offBtn"
+        android:layout_width="300dp"
+        android:layout_height="236dp"
+        android:src="@drawable/bluetooth_off_button_img"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="470dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:visibility="invisible"
+        />
+
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

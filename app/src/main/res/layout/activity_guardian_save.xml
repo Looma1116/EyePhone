@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@color/main_background"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+
+    <EditText
+        android:id="@+id/guardian_save_editText"
+        android:layout_width="400dp"
+        android:layout_height="80dp"
+        android:layout_marginTop="250dp"
+        android:inputType="text"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="SpeakableTextPresentCheck"
+        android:backgroundTint="@color/white"
+        android:textColorHint="@color/white" />
+
+    <Button
+        android:id="@+id/guardian_save_saveBtn"
+        android:layout_width="200dp"
+        android:layout_height="100dp"
+        android:text="보호자 등록"
+        android:textSize="30dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="330dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:backgroundTint="@color/main_eyephone"
+        android:textColor="@color/main_background"
+        android:textStyle="bold"
+        />
+    <ImageButton
+        android:id="@+id/guardian_save_backBtn"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:scaleType="fitCenter"
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="20dp"
+        android:src="@drawable/backbutton_mini_img"
+        tools:ignore="SpeakableTextPresentCheck"
+        app:layout_constraintTop_toTopOf="parent"
+        android:background="@android:color/transparent"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
