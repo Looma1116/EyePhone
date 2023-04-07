@@ -7,6 +7,6 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">?attr/isLightTheme</item>
         <item name="android:windowSplashScreenBackground">@color/main_eyephone</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/eyephone_logo</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/eyephone_logo2</item>
     </style>
 </resources>

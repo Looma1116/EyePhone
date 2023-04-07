@@ -48,14 +48,17 @@ class MainActivity : AppCompatActivity() {
         settingBtn.setOnClickListener {
             val settingIntent = Intent(this, SettingActivity::class.java)
             startActivity(settingIntent)
+            finish()
         }
         walkingModeBtn.setOnClickListener {
             val walkingIntent = Intent(this, WalkingModeActivity::class.java)
             startActivity(walkingIntent)
+            finish()
         }
         readingModeBtn.setOnClickListener {
             val readingIntent = Intent(this, ReadingModeActivity::class.java)
             startActivity(readingIntent)
+            finish()
         }
     }
 }

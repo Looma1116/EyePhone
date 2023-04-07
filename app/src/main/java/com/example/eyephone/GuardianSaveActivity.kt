@@ -42,6 +42,7 @@ class GuardianSaveActivity : AppCompatActivity() {
         backBtn.setOnClickListener {
             val intent = Intent(this, SettingActivity::class.java)
             startActivity(intent)
+            finish()
         }
 
     }
