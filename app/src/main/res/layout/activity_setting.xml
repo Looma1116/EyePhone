@@ -25,7 +25,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         />
     <ImageView
-        android:id="@+id/setting_bluetooth_onBtn"
+        android:id="@+id/setting_bluetooth_Btn"
         android:layout_width="300dp"
         android:layout_height="236dp"
         android:src="@drawable/bluetooth_button_img"
@@ -34,18 +34,6 @@
         android:layout_marginTop="470dp"
         app:layout_constraintEnd_toEndOf="parent"
         />
-    <ImageView
-        android:id="@+id/setting_bluetooth_offBtn"
-        android:layout_width="300dp"
-        android:layout_height="236dp"
-        android:src="@drawable/bluetooth_off_button_img"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginTop="470dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:visibility="invisible"
-        />
-
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

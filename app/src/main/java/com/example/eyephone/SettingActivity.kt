@@ -16,6 +16,7 @@ class SettingActivity: AppCompatActivity() {
 
         var backBtn: ImageView =findViewById(R.id.setting_backBtn)
         var guardianSaveBtn: ImageView = findViewById(R.id.setting_guardian_registerBtn)
+        var bluetoothBtn: ImageView = findViewById(R.id.setting_bluetooth_Btn)
 
         guardianSaveBtn.setOnClickListener {
             val guardianIntent = Intent(this, GuardianSaveActivity::class.java)
@@ -25,6 +26,11 @@ class SettingActivity: AppCompatActivity() {
         backBtn.setOnClickListener {
             val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
+            finish()
+        }
+        bluetoothBtn.setOnClickListener {
+            val bluetoothIntent = Intent(this, BluetoothActivity::class.java)
+            startActivity(bluetoothIntent)
             finish()
         }
 

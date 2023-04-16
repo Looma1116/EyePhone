@@ -30,6 +30,7 @@
         <activity android:name=".SettingActivity" />
         <activity android:name=".WalkingModeActivity" />
         <activity android:name=".GuardianSaveActivity" />
+        <activity android:name=".BluetoothActivity" />
         <activity
             android:name=".SplashActivity"
             android:theme="@style/Theme.EyePhone1"
