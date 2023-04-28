@@ -42,8 +42,8 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
     private var streamingConfirm = false
     private lateinit var imageReader: ImageReader
     companion object {
-        private const val TAG = "WalkingModeActivity"
-        private const val CAMERA_PERMISSION_REQUEST_CODE = 100
+        const val TAG = "WalkingModeActivity"
+        const val CAMERA_PERMISSION_REQUEST_CODE = 100
     }
     private val imageProcessingSemaphore = Semaphore(2)
 
@@ -62,6 +62,8 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
         var backBtn: ImageView = findViewById(R.id.walking_mode_backBtn)
 
         backBtn.setOnClickListener {
+            stopStreaming()
+            streamButton.text = "Start Streaming"
             val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
             finish()

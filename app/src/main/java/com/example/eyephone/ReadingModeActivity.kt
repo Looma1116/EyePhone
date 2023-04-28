@@ -4,12 +4,18 @@ import android.Manifest
 import android.R
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Build
-import android.os.Bundle
+import android.graphics.ImageFormat
+import android.hardware.camera2.CameraCaptureSession
+import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.TotalCaptureResult
+import android.media.Image
+import android.media.ImageReader
+import android.os.*
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.util.Log
+import android.view.SurfaceView
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
@@ -18,120 +24,339 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import java.io.ByteArrayOutputStream
+import java.io.DataOutputStream
+import java.net.Socket
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.util.concurrent.Semaphore
+import kotlin.coroutines.CoroutineContext
 
 
-class ReadingModeActivity: AppCompatActivity() {
-    private lateinit var speechRecognizer: SpeechRecognizer
-    private lateinit var recognitionListener: RecognitionListener
+class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
+    private lateinit var camera: android.hardware.camera2.CameraDevice
+    private lateinit var surfaceView: SurfaceView
+    private lateinit var streamButton: Button
+    private lateinit var outputStream: DataOutputStream
+    private var isStreaming = false
+    private var streamingConfirm = false
+    private lateinit var imageReader: ImageReader
+    private val imageProcessingSemaphore = Semaphore(2)
+
+    @Volatile
+    private var isProcessingImage = false
+    private lateinit var job: Job
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Main + job
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(com.example.eyephone.R.layout.activity_reading_mode)
+        job = Job()
+
 
         var backBtn: ImageView = findViewById(com.example.eyephone.R.id.reading_mode_backBtn)
-        var btnStart: Button = findViewById(com.example.eyephone.R.id.button)
 
         backBtn.setOnClickListener {
+            stopStreaming()
+            streamButton.text = "Start Streaming"
             val mainIntent = Intent(this, MainActivity::class.java)
             startActivity(mainIntent)
             finish()
         }
-        requestPermission()
+// 권한 설정 같은 거 (소켓 쓸 때 오류 났었음)
+        val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
+        StrictMode.setThreadPolicy(policy)
 
-        var intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-        intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, packageName)
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ko-KR")
+        surfaceView = findViewById(com.example.eyephone.R.id.reading_surfaceView)
+        streamButton = findViewById(com.example.eyephone.R.id.reading_streamButton)
 
-        setListener()
-
-        btnStart.setOnClickListener {
-            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
-            speechRecognizer.setRecognitionListener(recognitionListener)
-            speechRecognizer.startListening(intent)
-        }
-    }
-    private fun requestPermission() {
-        if (Build.VERSION.SDK_INT >= 23 && ContextCompat.checkSelfPermission(this,
-                Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-
-            // 거부해도 계속 노출됨. ("다시 묻지 않음" 체크 시 노출 안됨.)
-            // 허용은 한 번만 승인되면 그 다음부터 자동으로 허용됨.
-            ActivityCompat.requestPermissions(this,
-                arrayOf(Manifest.permission.RECORD_AUDIO), 0)
-        }
-    }
-
-
-    private fun setListener() {
-        recognitionListener = object: RecognitionListener {
-
-            override fun onReadyForSpeech(params: Bundle?) {
-                Toast.makeText(applicationContext, "음성인식을 시작합니다.", Toast.LENGTH_SHORT).show()
-            }
-
-            override fun onBeginningOfSpeech() {
-
-            }
-
-            override fun onRmsChanged(rmsdB: Float) {
-
-            }
-
-            override fun onBufferReceived(buffer: ByteArray?) {
-
-            }
-
-            override fun onEndOfSpeech() {
-
-            }
-
-            override fun onError(error: Int) {
-                var message: String
-
-                when (error) {
-                    SpeechRecognizer.ERROR_AUDIO ->
-                        message = "오디오 에러"
-                    SpeechRecognizer.ERROR_CLIENT ->
-                        message = "클라이언트 에러"
-                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS ->
-                        message = "퍼미션 없음"
-                    SpeechRecognizer.ERROR_NETWORK ->
-                        message = "네트워크 에러"
-                    SpeechRecognizer.ERROR_NETWORK_TIMEOUT ->
-                        message = "네트워크 타임아웃"
-                    SpeechRecognizer.ERROR_NO_MATCH ->
-                        message = "찾을 수 없음"
-                    SpeechRecognizer.ERROR_RECOGNIZER_BUSY ->
-                        message = "RECOGNIZER가 바쁨"
-                    SpeechRecognizer.ERROR_SERVER ->
-                        message = "서버가 이상함"
-                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT ->
-                        message = "말하는 시간초과"
-                    else ->
-                        message = "알 수 없는 오류"
-                }
-                Toast.makeText(applicationContext, "에러 발생 $message", Toast.LENGTH_SHORT).show()
-            }
-
-            override fun onResults(results: Bundle?) {
-                var matches: ArrayList<String> = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION) as ArrayList<String>
-                var textView: TextView = findViewById(com.example.eyephone.R.id.textView)
-                for (i in 0 until matches.size) {
-                    textView.text = matches[i]
+        streamButton.setOnClickListener {
+            if (isStreaming) {
+                stopStreaming()
+                streamButton.text = "Start Streaming"
+            } else {
+                if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                    requestPermissions(
+                        arrayOf(Manifest.permission.CAMERA),
+                        WalkingModeActivity.CAMERA_PERMISSION_REQUEST_CODE
+                    )
+                } else {
+                    startStreaming()
+                    streamButton.text = "Stop Streaming"
                 }
             }
+            isStreaming = !isStreaming
+        }
 
-            override fun onPartialResults(partialResults: Bundle?) {
 
-            }
+    }
 
-            override fun onEvent(eventType: Int, params: Bundle?) {
+    private fun startStreaming() {
+        val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
+        val port = 9999
 
-            }
+        val imageChannel = Channel<ByteArray>()
+        val cameraJob = launch(Dispatchers.IO) {
+            startCamera(serverUrl, port, imageChannel)
+        }
 
+//        val socketJob = launch(Dispatchers.IO) {
+//            startSocket(serverUrl, port, imageChannel)
+//        }
+        launch {
+            cameraJob.join()
+//            socketJob.join()
         }
     }
 
+    private suspend fun startCamera(serverUrl: String,
+                                    port: Int,
+                                    imageChannel: Channel<ByteArray>
+    ) {
 
+        try {
+
+
+            val cameraManager =
+                getSystemService(CAMERA_SERVICE) as android.hardware.camera2.CameraManager
+            val cameraId = cameraManager.cameraIdList[0]
+
+
+
+            if (ActivityCompat.checkSelfPermission(
+                    this@ReadingModeActivity,
+                    Manifest.permission.CAMERA
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                return
+            }
+            streamingConfirm = true
+            val handlerThread = HandlerThread("CameraThread")
+            handlerThread.start()
+            val handler = Handler(handlerThread.looper)
+            val socket = Socket(serverUrl, port)
+            outputStream = DataOutputStream(socket.getOutputStream())
+
+            val processingJob = Job()
+            val processingScope = CoroutineScope(Dispatchers.IO + processingJob)
+
+            cameraManager.openCamera(
+                cameraId,
+                object : android.hardware.camera2.CameraDevice.StateCallback() {
+                    override fun onOpened(camera: android.hardware.camera2.CameraDevice) {
+                        this@ReadingModeActivity.camera = camera
+                        val surface = surfaceView.holder.surface
+//                        val preview_image_format = ImageFormat.YUV_420_888
+                        val preview_image_format = ImageFormat.JPEG
+                        val imageReader = ImageReader.newInstance(
+                            surfaceView.width/5, surfaceView.height/5, preview_image_format, 32
+                        )
+
+                        val ImageAvailableListener: (ImageReader) -> Unit =
+                            { reader ->
+                                processingScope.launch {
+                                    if (streamingConfirm) {
+                                        if (isProcessingImage) {
+                                            return@launch
+                                        }
+                                        isProcessingImage = true
+                                        var image: Image? = null
+                                        try {
+                                            imageProcessingSemaphore.acquire()
+                                            val image = reader.acquireNextImage()
+                                            if (image != null) {
+                                                processImage(image)
+                                                delay(44)
+                                            } else {
+                                                isProcessingImage = false
+                                            }
+                                        } catch (e: Exception) {
+                                            Log.e(WalkingModeActivity.TAG, "Failed to outputStream Write", e)
+                                            isProcessingImage = false
+                                        } finally {
+                                            imageProcessingSemaphore.release()
+                                            isProcessingImage = false
+                                        }
+                                    }
+                                }
+                            }
+
+                        imageReader.setOnImageAvailableListener(ImageAvailableListener, null)
+                        // SurfaceLayout에 프리뷰 띄우기
+                        val surfaces = listOf(surface, imageReader.surface)
+                        val captureRequestBuilder =
+                            camera.createCaptureRequest(android.hardware.camera2.CameraDevice.TEMPLATE_PREVIEW)
+                        captureRequestBuilder.addTarget(surface)
+                        captureRequestBuilder.addTarget(imageReader.surface)
+
+                        camera.createCaptureSession(
+                            surfaces,
+                            object : CameraCaptureSession.StateCallback() {
+                                override fun onConfigured(session: CameraCaptureSession) {
+                                    try {
+                                        session.setRepeatingRequest(
+                                            captureRequestBuilder.build(),
+                                            object : CameraCaptureSession.CaptureCallback() {
+                                                override fun onCaptureCompleted(
+                                                    session: CameraCaptureSession,
+                                                    request: CaptureRequest,
+                                                    result: TotalCaptureResult
+                                                ) {
+                                                }
+                                            },
+                                            null
+                                        )
+                                    } catch (e: Exception) {
+                                        Log.e(WalkingModeActivity.TAG, "Failed to set up capture request", e)
+                                    }
+                                }
+
+                                override fun onConfigureFailed(session: CameraCaptureSession) {
+                                    Log.e(WalkingModeActivity.TAG, "Failed to configure camera capture session")
+                                }
+                            },
+                            null
+                        )
+                    }
+
+                    override fun onDisconnected(camera: android.hardware.camera2.CameraDevice) {
+                        Log.e(WalkingModeActivity.TAG, "Camera disconnected")
+                    }
+
+                    override fun onError(
+                        camera: android.hardware.camera2.CameraDevice,
+                        error: Int
+                    ) {
+                        Log.e(WalkingModeActivity.TAG, "Camera error: $error")
+                    }
+                },
+                handler
+            )
+        } catch (e: Exception) {
+            Log.e(WalkingModeActivity.TAG, "Failed to start streaming", e)
+            e.printStackTrace()
+        }
+    }
+
+    suspend fun processImage(image: Image){
+        try {
+            if (image.planes != null && streamingConfirm) {
+                var buffer = image.planes[0].buffer
+
+                val bytes = ByteArray(buffer.remaining())
+                buffer.get(bytes)
+                // Convert YUV_420_888 (Camera2 default format) to JPEG
+//                val yuvImage = YuvImage(
+//                    bytes,
+//                    ImageFormat.NV21,
+//                    image.width,
+//                    image.height,
+//                    null
+//                )
+
+                val byteArrayOutputStream = ByteArrayOutputStream()
+//                yuvImage.compressToJpeg(
+//                    Rect(0, 0, image.width, image.height),
+//                    50,
+//                    byteArrayOutputStream
+//                )
+//                val jpegBytes = byteArrayOutputStream.toByteArray()
+                launch {
+                    withContext(Dispatchers.IO) {// Send the JPEG byte array to the imageChannel
+//                        val imageSize = jpegBytes.size
+                        val imageSize = bytes.size
+                        val imageSizeBytes =
+                            ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(imageSize)
+                                .array()
+                        outputStream.write(imageSizeBytes)
+
+                        // Send the actual image byte array
+//                        outputStream.write(jpegBytes)
+                        outputStream.write(bytes)
+                        image.close()
+                        outputStream.flush()
+
+//                                                    imageChannel.send(jpegBytes)
+
+                    }
+                }
+            }
+        }catch (e:Exception){
+            Log.e(WalkingModeActivity.TAG, "Error processing image", e)
+        } finally {
+            isProcessingImage = false
+        }
+
+    }
+//    private suspend fun startSocket(
+//        serverUrl: String,
+//        port: Int,
+//        imageChannel: Channel<ByteArray>
+//    ) {
+//        try {
+//            val socket = Socket(serverUrl, port)
+//            outputStream = DataOutputStream(socket.getOutputStream())
+//
+//            for (jpegBytes in imageChannel) {
+//                // Send the size of the byte array
+//                val imageSize = jpegBytes.size
+//                val imageSizeBytes =
+//                    ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(imageSize).array()
+//                outputStream.write(imageSizeBytes)
+//
+//                // Send the actual image byte array
+//                outputStream.write(jpegBytes)
+//                outputStream.flush()
+//                delay(330)
+//
+//            }
+//        } catch (e: Exception) {
+//            Log.e(TAG, "Failed to start streaming", e)
+//            e.printStackTrace()
+//        }
+//    }
+
+    private fun stopStreaming() {
+        try {
+            camera.close()
+            streamingConfirm = false
+            outputStream.close()
+            if (::imageReader.isInitialized) {
+                imageReader.close()
+            }
+        } catch (e: Exception) {
+            Log.e(WalkingModeActivity.TAG, "Failed to stop streaming", e)
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == WalkingModeActivity.CAMERA_PERMISSION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startStreaming()
+                streamButton.text = "Stop Streaming"
+            } else {
+                //showToast("Camera permission is required.")
+            }
+        }
+    }
+    override fun onPause() {
+        super.onPause()
+        if (isStreaming) {
+            stopStreaming()
+            streamButton.text = "Start Streaming"
+            isStreaming = false
+        }
+    } override fun onDestroy() {
+        super.onDestroy()
+        job.cancel()
+    }
 }
