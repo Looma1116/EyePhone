@@ -29,6 +29,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import java.io.DataInputStream
 import java.util.concurrent.Semaphore
 import kotlin.coroutines.CoroutineContext
 
@@ -38,6 +39,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
     private lateinit var surfaceView: SurfaceView
     private lateinit var streamButton: Button
     private lateinit var outputStream: DataOutputStream
+    private lateinit var inputStream: DataInputStream
     private var isStreaming = false
     private var streamingConfirm = false
     private lateinit var imageReader: ImageReader
@@ -141,6 +143,8 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
             val handler = Handler(handlerThread.looper)
             val socket = Socket(serverUrl, port)
             outputStream = DataOutputStream(socket.getOutputStream())
+
+            inputStream = DataInputStream(socket.getInputStream())
 
             val processingJob = Job()
             val processingScope = CoroutineScope(Dispatchers.IO + processingJob)
@@ -326,6 +330,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
             camera.close()
             streamingConfirm = false
             outputStream.close()
+            inputStream.close()
             if (::imageReader.isInitialized) {
                 imageReader.close()
             }
