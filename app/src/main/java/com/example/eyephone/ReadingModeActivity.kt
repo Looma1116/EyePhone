@@ -75,11 +75,12 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
         surfaceView = findViewById(com.example.eyephone.R.id.reading_surfaceView)
         streamButton = findViewById(com.example.eyephone.R.id.reading_streamButton)
 
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         streamButton.setOnClickListener {
             if (isStreaming) {
                 stopStreaming()
+                //화면 켜짐 유지 해제 코드
+                window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 streamButton.text = "Start Streaming"
             } else {
                 if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -88,6 +89,8 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
                         WalkingModeActivity.CAMERA_PERMISSION_REQUEST_CODE
                     )
                 } else {
+                    //화면 켜짐 유지 코드
+                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                     startStreaming()
                     streamButton.text = "Stop Streaming"
                 }
