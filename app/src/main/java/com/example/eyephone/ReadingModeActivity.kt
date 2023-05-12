@@ -105,6 +105,11 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
         val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
         val port = 9999
 
+        val socket = Socket(serverUrl, port)
+        outputStream = DataOutputStream(socket.getOutputStream())
+        outputStream.writeUTF("reading mode")
+        outputStream.flush()
+
         val imageChannel = Channel<ByteArray>()
         val cameraJob = launch(Dispatchers.IO) {
             startCamera(serverUrl, port, imageChannel)
