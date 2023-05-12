@@ -16,6 +16,7 @@ import android.os.HandlerThread
 import android.os.StrictMode
 import android.util.Log
 import android.view.SurfaceView
+import android.view.WindowManager
 import android.widget.Button
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
@@ -79,9 +80,13 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
         surfaceView = findViewById(R.id.surfaceView)
         streamButton = findViewById(R.id.streamButton)
 
+
+
         streamButton.setOnClickListener {
             if (isStreaming) {
                 stopStreaming()
+                //화면 켜짐 유지 해제 코드
+                window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 streamButton.text = "Start Streaming"
             } else {
                 if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -90,6 +95,8 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
                         CAMERA_PERMISSION_REQUEST_CODE
                     )
                 } else {
+                    //화면 켜짐 유지 코드
+                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                     startStreaming()
                     streamButton.text = "Stop Streaming"
                 }

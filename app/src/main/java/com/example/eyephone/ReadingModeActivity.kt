@@ -17,6 +17,7 @@ import android.speech.SpeechRecognizer
 import android.util.Log
 import android.view.SurfaceView
 import android.view.View
+import android.view.WindowManager
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -73,6 +74,8 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
 
         surfaceView = findViewById(com.example.eyephone.R.id.reading_surfaceView)
         streamButton = findViewById(com.example.eyephone.R.id.reading_streamButton)
+
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         streamButton.setOnClickListener {
             if (isStreaming) {
