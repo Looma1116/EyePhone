@@ -23,14 +23,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.example.eyephone.R.layout.activity_walking_mode
 import kotlinx.coroutines.*
-import java.io.ByteArrayOutputStream
-import java.io.DataOutputStream
 import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import java.io.DataInputStream
+import java.io.*
 import java.util.concurrent.Semaphore
 import kotlin.coroutines.CoroutineContext
 
@@ -41,7 +39,6 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
     private lateinit var streamButton: Button
     private lateinit var outputStream: DataOutputStream
     private lateinit var inputStream: DataInputStream
-    private lateinit var socket: Socket
     private var isStreaming = false
     private var streamingConfirm = false
     private lateinit var imageReader: ImageReader
@@ -104,7 +101,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
 
                     val socket = Socket(serverUrl, port)
                     outputStream = DataOutputStream(socket.getOutputStream())
-                    outputStream.writeInt(1)
+                    outputStream.writeUTF("walking mode")
                     outputStream.flush()
 
                     startStreaming()
@@ -161,7 +158,6 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
             val socket = Socket(serverUrl, port)
             outputStream = DataOutputStream(socket.getOutputStream())
 
-            inputStream = DataInputStream(socket.getInputStream())
 
             val processingJob = Job()
             val processingScope = CoroutineScope(Dispatchers.IO + processingJob)
@@ -175,7 +171,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
 //                        val preview_image_format = ImageFormat.YUV_420_888
                         val preview_image_format = ImageFormat.JPEG
                         val imageReader = ImageReader.newInstance(
-                            surfaceView.width/2, surfaceView.height/2, preview_image_format, 32
+                            surfaceView.width/5, surfaceView.height/5, preview_image_format, 32
                         )
 
                         val ImageAvailableListener: (ImageReader) -> Unit =
@@ -302,6 +298,15 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
                         image.close()
                         outputStream.flush()
 
+                        val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
+                        val port = 9999
+                        val socket = Socket(serverUrl, port)
+                        inputStream = DataInputStream(socket.getInputStream())
+                        val reader = BufferedReader(InputStreamReader(inputStream))
+                        val receivedString = reader.readLine()
+                        Log.d("Tag", receivedString)
+
+
 //                                                    imageChannel.send(jpegBytes)
 
                     }
@@ -348,7 +353,6 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
             streamingConfirm = false
             outputStream.close()
             inputStream.close()
-            socket.close()
             if (::imageReader.isInitialized) {
                 imageReader.close()
             }

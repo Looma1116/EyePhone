@@ -27,8 +27,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import java.io.ByteArrayOutputStream
-import java.io.DataOutputStream
+import java.io.*
 import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -41,6 +40,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
     private lateinit var surfaceView: SurfaceView
     private lateinit var streamButton: Button
     private lateinit var outputStream: DataOutputStream
+    private lateinit var inputStream: DataInputStream
     private lateinit var socket: Socket
     private var isStreaming = false
     private var streamingConfirm = false
@@ -291,11 +291,20 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
 //                        outputStream.writeUTF("read")
                         outputStream.write(imageSizeBytes)
 
+
                         // Send the actual image byte array
 //                        outputStream.write(jpegBytes)
                         outputStream.write(bytes)
                         image.close()
                         outputStream.flush()
+
+                        val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
+                        val port = 9999
+                        socket = Socket(serverUrl, port)
+                        inputStream = DataInputStream(socket.getInputStream())
+                        val reader = BufferedReader(InputStreamReader(inputStream))
+                        val receivedString = reader.readLine()
+                        Log.d("Tag", receivedString)
 
 //                                                    imageChannel.send(jpegBytes)
 
@@ -342,7 +351,9 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
             camera.close()
             streamingConfirm = false
             outputStream.close()
+            inputStream.close()
             socket.close()
+
             if (::imageReader.isInitialized) {
                 imageReader.close()
             }
