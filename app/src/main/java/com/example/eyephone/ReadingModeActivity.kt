@@ -120,7 +120,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
             startCamera(serverUrl, port, imageChannel)
         }
         val inputData = launch(Dispatchers.IO) {
-            getData(serverUrl ,port)
+            getDataAsync()
         }
 
 //        val socketJob = launch(Dispatchers.IO) {
@@ -261,15 +261,22 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
             e.printStackTrace()
         }
     }
-    private suspend fun getData(serverUrl: String,
+    private fun getDataAsync ()= GlobalScope.async {
+        val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
+        val port = 9999
+        getData(serverUrl ,port)
+    }
+    private fun getData(serverUrl: String,
                                 port: Int){
-        val socket = Socket(serverUrl, port)
+//        val socket = Socket(serverUrl, port)
+        Log.d("Tag","INPUT STREAM")
         inputStream = DataInputStream(socket.getInputStream())
         val reader = BufferedReader(InputStreamReader(inputStream))
         val receivedString = reader.readLine()
+
         if (receivedString != null && receivedString.isNotEmpty()) {
             // String received successfully
-            Log.d("Tag", "Received string: $receivedString")
+            Log.d("Tag","Received string: $receivedString")
         } else {
             // String not received
             Log.d("Tag", "String not received or is empty")
@@ -364,7 +371,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
             streamingConfirm = false
             outputStream.close()
             inputStream.close()
-            socket.close()
+//            socket.close()
 
             if (::imageReader.isInitialized) {
                 imageReader.close()
