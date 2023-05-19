@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
     app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
 
@@ -16,6 +17,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
         <ImageButton
+            tools:ignore="SpeakableTextPresentCheck"
             android:id="@+id/walking_mode_backBtn"
             android:layout_width="50dp"
             android:layout_height="50dp"
