@@ -41,6 +41,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
     private lateinit var surfaceView: SurfaceView
     private lateinit var streamButton: Button
     private lateinit var outputStream: DataOutputStream
+    private lateinit var socket: Socket
     private var isStreaming = false
     private var streamingConfirm = false
     private lateinit var imageReader: ImageReader
@@ -96,7 +97,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
 
                     val socket = Socket(serverUrl, port)
                     outputStream = DataOutputStream(socket.getOutputStream())
-                    outputStream.writeUTF("reading mode")
+                    outputStream.writeInt(0)
                     outputStream.flush()
 
                     startStreaming()
@@ -153,8 +154,8 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
             val handlerThread = HandlerThread("CameraThread")
             handlerThread.start()
             val handler = Handler(handlerThread.looper)
-            val socket = Socket(serverUrl, port)
-            outputStream = DataOutputStream(socket.getOutputStream())
+//            val socket = Socket(serverUrl, port)
+//            outputStream = DataOutputStream(socket.getOutputStream())
 
             val processingJob = Job()
             val processingScope = CoroutineScope(Dispatchers.IO + processingJob)
@@ -168,7 +169,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
 //                        val preview_image_format = ImageFormat.YUV_420_888
                         val preview_image_format = ImageFormat.JPEG
                         val imageReader = ImageReader.newInstance(
-                            surfaceView.width/5, surfaceView.height/5, preview_image_format, 32
+                            surfaceView.width/2, surfaceView.height/2, preview_image_format, 32
                         )
 
                         val ImageAvailableListener: (ImageReader) -> Unit =
@@ -287,6 +288,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
                         val imageSizeBytes =
                             ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(imageSize)
                                 .array()
+//                        outputStream.writeUTF("read")
                         outputStream.write(imageSizeBytes)
 
                         // Send the actual image byte array
@@ -340,6 +342,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
             camera.close()
             streamingConfirm = false
             outputStream.close()
+            socket.close()
             if (::imageReader.isInitialized) {
                 imageReader.close()
             }

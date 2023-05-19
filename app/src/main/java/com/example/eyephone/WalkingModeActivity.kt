@@ -41,6 +41,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
     private lateinit var streamButton: Button
     private lateinit var outputStream: DataOutputStream
     private lateinit var inputStream: DataInputStream
+    private lateinit var socket: Socket
     private var isStreaming = false
     private var streamingConfirm = false
     private lateinit var imageReader: ImageReader
@@ -103,7 +104,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
 
                     val socket = Socket(serverUrl, port)
                     outputStream = DataOutputStream(socket.getOutputStream())
-                    outputStream.writeUTF("walking mode")
+                    outputStream.writeInt(1)
                     outputStream.flush()
 
                     startStreaming()
@@ -174,7 +175,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
 //                        val preview_image_format = ImageFormat.YUV_420_888
                         val preview_image_format = ImageFormat.JPEG
                         val imageReader = ImageReader.newInstance(
-                            surfaceView.width/5, surfaceView.height/5, preview_image_format, 32
+                            surfaceView.width/2, surfaceView.height/2, preview_image_format, 32
                         )
 
                         val ImageAvailableListener: (ImageReader) -> Unit =
@@ -347,6 +348,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
             streamingConfirm = false
             outputStream.close()
             inputStream.close()
+            socket.close()
             if (::imageReader.isInitialized) {
                 imageReader.close()
             }
