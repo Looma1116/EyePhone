@@ -97,6 +97,15 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
                 } else {
                     //화면 켜짐 유지 코드
                     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
+                    val port = 9999
+
+
+                    val socket = Socket(serverUrl, port)
+                    outputStream = DataOutputStream(socket.getOutputStream())
+                    outputStream.writeUTF("walking mode")
+                    outputStream.flush()
+
                     startStreaming()
                     streamButton.text = "Stop Streaming"
                 }
@@ -108,13 +117,6 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
     private fun startStreaming() {
         val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
         val port = 9999
-
-
-        val socket = Socket(serverUrl, port)
-        outputStream = DataOutputStream(socket.getOutputStream())
-        outputStream.writeUTF("walking mode")
-        outputStream.flush()
-
 
         val imageChannel = Channel<ByteArray>()
         val cameraJob = launch(Dispatchers.IO) {
