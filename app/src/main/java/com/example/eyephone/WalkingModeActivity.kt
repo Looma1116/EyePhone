@@ -124,9 +124,13 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
 //        val socketJob = launch(Dispatchers.IO) {
 //            startSocket(serverUrl, port, imageChannel)
 //        }
+        val inputData = launch(Dispatchers.IO) {
+            getData(serverUrl ,port)
+        }
         launch {
             cameraJob.join()
 //            socketJob.join()
+            inputData.join()
         }
     }
 
@@ -298,16 +302,9 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
                         image.close()
                         outputStream.flush()
 
-                        val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
-                        val port = 9999
-                        val socket = Socket(serverUrl, port)
-                        inputStream = DataInputStream(socket.getInputStream())
-                        val reader = BufferedReader(InputStreamReader(inputStream))
-                        val receivedString = reader.readLine()
-                        Log.d("Tag", receivedString)
 
 
-//                                                    imageChannel.send(jpegBytes)
+//                                                 imageChannel.send(jpegBytes)
 
                     }
                 }
@@ -318,6 +315,21 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
             isProcessingImage = false
         }
 
+    }
+    private suspend fun getData(serverUrl: String,
+                                port: Int){
+        val socket = Socket(serverUrl, port)
+        inputStream = DataInputStream(socket.getInputStream())
+        val reader = BufferedReader(InputStreamReader(inputStream))
+        val receivedString = reader.readLine()
+        if (receivedString != null && receivedString.isNotEmpty()) {
+            // String received successfully
+            Log.d("Tag", "Received string: $receivedString")
+        } else {
+            // String not received
+            Log.d("Tag", "String not received or is empty")
+            // Handle the absence of the string, perform appropriate actions or show an error message
+        }
     }
 //    private suspend fun startSocket(
 //        serverUrl: String,
@@ -360,6 +372,8 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
             Log.e(TAG, "Failed to stop streaming", e)
         }
     }
+
+
 
     override fun onRequestPermissionsResult(
         requestCode: Int,

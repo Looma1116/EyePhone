@@ -119,6 +119,9 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
         val cameraJob = launch(Dispatchers.IO) {
             startCamera(serverUrl, port, imageChannel)
         }
+        val inputData = launch(Dispatchers.IO) {
+            getData(serverUrl ,port)
+        }
 
 //        val socketJob = launch(Dispatchers.IO) {
 //            startSocket(serverUrl, port, imageChannel)
@@ -126,6 +129,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
         launch {
             cameraJob.join()
 //            socketJob.join()
+            inputData.join()
         }
     }
 
@@ -257,6 +261,21 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
             e.printStackTrace()
         }
     }
+    private suspend fun getData(serverUrl: String,
+                                port: Int){
+        val socket = Socket(serverUrl, port)
+        inputStream = DataInputStream(socket.getInputStream())
+        val reader = BufferedReader(InputStreamReader(inputStream))
+        val receivedString = reader.readLine()
+        if (receivedString != null && receivedString.isNotEmpty()) {
+            // String received successfully
+            Log.d("Tag", "Received string: $receivedString")
+        } else {
+            // String not received
+            Log.d("Tag", "String not received or is empty")
+            // Handle the absence of the string, perform appropriate actions or show an error message
+        }
+    }
 
     suspend fun processImage(image: Image){
         try {
@@ -298,13 +317,6 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
                         image.close()
                         outputStream.flush()
 
-                        val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
-                        val port = 9999
-                        socket = Socket(serverUrl, port)
-                        inputStream = DataInputStream(socket.getInputStream())
-                        val reader = BufferedReader(InputStreamReader(inputStream))
-                        val receivedString = reader.readLine()
-                        Log.d("Tag", receivedString)
 
 //                                                    imageChannel.send(jpegBytes)
 
