@@ -127,13 +127,10 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
 //        val socketJob = launch(Dispatchers.IO) {
 //            startSocket(serverUrl, port, imageChannel)
 //        }
-        val inputData = launch(Dispatchers.IO) {
-            getData(serverUrl ,port)
-        }
+
         launch {
             cameraJob.join()
 //            socketJob.join()
-            inputData.join()
         }
     }
 
