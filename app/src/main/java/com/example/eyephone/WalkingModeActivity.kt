@@ -14,6 +14,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.StrictMode
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.SurfaceView
 import android.view.WindowManager
@@ -29,6 +30,7 @@ import java.nio.ByteOrder
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import java.io.*
+import java.util.*
 import java.util.concurrent.Semaphore
 import kotlin.coroutines.CoroutineContext
 
@@ -42,6 +44,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
     private var isStreaming = false
     private var streamingConfirm = false
     private lateinit var imageReader: ImageReader
+    private var tts:TextToSpeech?=null
     companion object {
         const val TAG = "WalkingModeActivity"
         const val CAMERA_PERMISSION_REQUEST_CODE = 100
@@ -161,6 +164,9 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
             val handler = Handler(handlerThread.looper)
             val socket = Socket(serverUrl, port)
             outputStream = DataOutputStream(socket.getOutputStream())
+            val inputData = launch(Dispatchers.IO) {
+                getData(serverUrl ,port)
+            }
 
 
             val processingJob = Job()
@@ -193,6 +199,9 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
                                             if (image != null) {
                                                 processImage(image)
                                                 delay(44)
+                                                //서버에서 정보 받기
+                                                inputData.join()
+
                                             } else {
                                                 isProcessingImage = false
                                             }
@@ -325,6 +334,9 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
         if (receivedString != null && receivedString.isNotEmpty()) {
             // String received successfully
             Log.d("Tag", "Received string: $receivedString")
+            //서버에서 받은 문자 스피커로 출력
+            setTTS()
+            playTTS(receivedString)
         } else {
             // String not received
             Log.d("Tag", "String not received or is empty")
@@ -358,6 +370,22 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
 //            e.printStackTrace()
 //        }
 //    }
+private fun playTTS(string: String) {
+    tts?.speak(string, TextToSpeech.QUEUE_FLUSH, null, "")
+    tts?.playSilentUtterance(750, TextToSpeech.QUEUE_ADD,null) // deley시간 설정
+}
+
+    private fun setTTS() {
+        tts = TextToSpeech(applicationContext, TextToSpeech.OnInitListener {
+            if (it == TextToSpeech.SUCCESS) {
+                val result = tts!!.setLanguage(Locale.KOREAN)
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    Log.e("TTS", "해당언어는 지원되지 않습니다.")
+                    return@OnInitListener
+                }
+            }
+        })
+    }
 
     private fun stopStreaming() {
         try {

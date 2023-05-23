@@ -11,9 +11,11 @@ import android.hardware.camera2.TotalCaptureResult
 import android.media.Image
 import android.media.ImageReader
 import android.os.*
+import android.provider.ContactsContract.Data
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.SurfaceView
 import android.view.View
@@ -31,6 +33,7 @@ import java.io.*
 import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.*
 import java.util.concurrent.Semaphore
 import kotlin.coroutines.CoroutineContext
 
@@ -46,6 +49,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
     private var streamingConfirm = false
     private lateinit var imageReader: ImageReader
     private val imageProcessingSemaphore = Semaphore(2)
+    private var tts:TextToSpeech?=null
 
     @Volatile
     private var isProcessingImage = false
@@ -119,9 +123,6 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
         val cameraJob = launch(Dispatchers.IO) {
             startCamera(serverUrl, port, imageChannel)
         }
-        val inputData = launch(Dispatchers.IO) {
-            getData(serverUrl ,port)
-        }
 
 //        val socketJob = launch(Dispatchers.IO) {
 //            startSocket(serverUrl, port, imageChannel)
@@ -129,7 +130,6 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
         launch {
             cameraJob.join()
 //            socketJob.join()
-            inputData.join()
         }
     }
 
@@ -144,6 +144,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
             val cameraManager =
                 getSystemService(CAMERA_SERVICE) as android.hardware.camera2.CameraManager
             val cameraId = cameraManager.cameraIdList[0]
+
 
 
 
@@ -163,6 +164,11 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
 
             val processingJob = Job()
             val processingScope = CoroutineScope(Dispatchers.IO + processingJob)
+
+            val inputData = launch(Dispatchers.IO) {
+                getData(serverUrl ,port)
+            }
+
 
             cameraManager.openCamera(
                 cameraId,
@@ -191,6 +197,12 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
                                             if (image != null) {
                                                 processImage(image)
                                                 delay(44)
+                                                //서버에서 정보 받기
+                                                inputData.join()
+
+
+
+
                                             } else {
                                                 isProcessingImage = false
                                             }
@@ -263,20 +275,48 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
     }
     private suspend fun getData(serverUrl: String,
                                 port: Int){
-        val socket = Socket(serverUrl, port)
+        val handlerThread = HandlerThread("InputThread")
+        handlerThread.start()
+        val handler = Handler(handlerThread.looper)
+//            val socket = Socket(serverUrl, port)
+//            outputStream = DataOutputStream(socket.getOutputStream())
+
+        val processingJob = Job()
+        val processingScope = CoroutineScope(Dispatchers.IO + processingJob)
+
         inputStream = DataInputStream(socket.getInputStream())
         val reader = BufferedReader(InputStreamReader(inputStream))
         val receivedString = reader.readLine()
         if (receivedString != null && receivedString.isNotEmpty()) {
             // String received successfully
             Log.d("Tag", "Received string: $receivedString")
+            //받은 문자열 스피커로 출력
+            setTTS()
+            playTTS(receivedString)
+
+
         } else {
             // String not received
             Log.d("Tag", "String not received or is empty")
             // Handle the absence of the string, perform appropriate actions or show an error message
         }
     }
+    private fun playTTS(string: String) {
+        tts?.speak(string, TextToSpeech.QUEUE_FLUSH, null, "")
+        tts?.playSilentUtterance(750,TextToSpeech.QUEUE_ADD,null) // deley시간 설정
+    }
 
+    private fun setTTS() {
+        tts = TextToSpeech(applicationContext, TextToSpeech.OnInitListener {
+            if (it == TextToSpeech.SUCCESS) {
+                val result = tts!!.setLanguage(Locale.KOREAN)
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    Log.e("TTS", "해당언어는 지원되지 않습니다.")
+                    return@OnInitListener
+                }
+            }
+        })
+    }
     suspend fun processImage(image: Image){
         try {
             if (image.planes != null && streamingConfirm) {
@@ -316,6 +356,8 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
                         outputStream.write(bytes)
                         image.close()
                         outputStream.flush()
+
+
 
 
 //                                                    imageChannel.send(jpegBytes)
