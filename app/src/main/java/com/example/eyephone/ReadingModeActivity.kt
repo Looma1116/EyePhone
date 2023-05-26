@@ -2,6 +2,7 @@ package com.example.eyephone
 
 import android.Manifest
 import android.R
+import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.ImageFormat
@@ -63,6 +64,30 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
         setContentView(com.example.eyephone.R.layout.activity_reading_mode)
         job = Job()
 
+        //streaming 실행 코드
+        if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(
+                arrayOf(Manifest.permission.CAMERA),
+                WalkingModeActivity.CAMERA_PERMISSION_REQUEST_CODE
+            )
+        } else {
+            //화면 켜짐 유지 코드
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+            val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
+            val port = 9999
+
+            val socket = Socket(serverUrl, port)
+            outputStream = DataOutputStream(socket.getOutputStream())
+            inputStream = DataInputStream(socket.getInputStream())
+            var mode = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(0)
+                .array()
+            outputStream.write(mode)
+            outputStream.flush()
+
+            startStreaming()
+            streamButton.text = "Stop Streaming"
+        }
 
         var backBtn: ImageView = findViewById(com.example.eyephone.R.id.reading_mode_backBtn)
 
@@ -73,7 +98,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
             startActivity(mainIntent)
             finish()
         }
-// 권한 설정 같은 거 (소켓 쓸 때 오류 났었음)
+        // 권한 설정 같은 거 (소켓 쓸 때 오류 났었음)
         val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
         StrictMode.setThreadPolicy(policy)
 
@@ -81,7 +106,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
         streamButton = findViewById(com.example.eyephone.R.id.reading_streamButton)
 
 
-        streamButton.setOnClickListener {
+      /*  streamButton.setOnClickListener {
             if (isStreaming) {
                 stopStreaming()
                 //화면 켜짐 유지 해제 코드
@@ -114,7 +139,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
             }
             isStreaming = !isStreaming
         }
-
+*/
 
     }
 
@@ -468,7 +493,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
                 imageReader.close()
             }
         } catch (e: Exception) {
-            Log.e(WalkingModeActivity.TAG, "Failed to stop streaming", e)
+            Log.e(TAG, "Failed to stop streaming", e)
         }
     }
 
