@@ -49,7 +49,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
     private var streamingConfirm = false
     private lateinit var imageReader: ImageReader
     private val imageProcessingSemaphore = Semaphore(2)
-    private var tts:TextToSpeech?=null
+    private lateinit var tts:TextToSpeech
 
     @Volatile
     private var isProcessingImage = false
@@ -387,10 +387,45 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
 //            e.printStackTrace()
 //        }
 //    }
-private fun playTTS(string: String) {
-    tts?.speak(string, TextToSpeech.QUEUE_FLUSH, null, "")
-    tts?.playSilentUtterance(750, TextToSpeech.QUEUE_ADD,null) // deley시간 설정
-}
+    fun playTTS(text: String) {
+        // Set the Utterance ID to identify the speech
+        val utteranceId = UUID.randomUUID().toString()
+
+        // Set the language based on the detected language of the text
+        val language = detectLanguage(text)
+        if (language == "ko") {
+            tts.language = Locale.KOREAN
+        } else {
+            tts.language = Locale.ENGLISH
+        }
+
+        // Speak the text
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
+    }
+
+    fun detectLanguage(text: String): String {
+        // Use a language detection library or API to detect the language of the text
+        // Return the language code (e.g., "ko" for Korean, "en" for English)
+        // If the language detection library is not available, you can consider using a rule-based approach or fallback to a default language
+        // Here's an example using ML Kit Language Identification API:
+        // val languageIdentifier = LanguageIdentification.getClient()
+        // val task = languageIdentifier.identifyLanguage(text)
+        // val result = Tasks.await(task)
+        // return result.languageTag
+
+        // For demonstration purposes, let's assume we have a simple rule-based language detector
+        return if (text.contains(Regex("[가-힣]"))) {
+            "ko" // Korean
+        } else {
+            "en" // English
+        }
+    }
+
+    fun shutdownTTS() {
+        // Shutdown the TextToSpeech engine when it's no longer needed
+        tts.stop()
+        tts.shutdown()
+    }
 
     private fun setTTS() {
         tts = TextToSpeech(applicationContext, TextToSpeech.OnInitListener {
@@ -405,6 +440,7 @@ private fun playTTS(string: String) {
     }
 
 
+
     private fun stopStreaming() {
         try {
             camera.close()
@@ -412,6 +448,7 @@ private fun playTTS(string: String) {
             outputStream.close()
             inputStream.close()
             socket.close()
+            shutdownTTS()
 
             if (::imageReader.isInitialized) {
                 imageReader.close()
