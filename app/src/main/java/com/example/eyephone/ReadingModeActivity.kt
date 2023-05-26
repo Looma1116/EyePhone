@@ -196,7 +196,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
 //                        val preview_image_format = ImageFormat.YUV_420_888
                         val preview_image_format = ImageFormat.JPEG
                         val imageReader = ImageReader.newInstance(
-                            surfaceView.width/3, surfaceView.height/3, preview_image_format, 32
+                            surfaceView.width/5, surfaceView.height/5, preview_image_format, 32
                         )
 
                         val ImageAvailableListener: (ImageReader) -> Unit =
@@ -213,7 +213,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
                                             val image = reader.acquireNextImage()
                                             if (image != null) {
                                                 processImage(image)
-                                                delay(44)
+                                                delay(50)
 //                                                getData(serverUrl ,port)
                                             } else {
                                                 isProcessingImage = false
@@ -309,8 +309,8 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
 //                    byteArrayOutputStream
 //                )
 //                val jpegBytes = byteArrayOutputStream.toByteArray()
-                launch {
-                    withContext(Dispatchers.IO) {// Send the JPEG byte array to the imageChannel
+//                launch {
+//                    withContext(Dispatchers.IO) {// Send the JPEG byte array to the imageChannel
 //                        val imageSize = jpegBytes.size
                         val imageSize = bytes.size
                         val imageSizeBytes =
@@ -329,8 +329,8 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
 
 //                                                    imageChannel.send(jpegBytes)
 
-                    }
-                }
+//                    }
+//                }
             }
         }catch (e:Exception){
             Log.e(WalkingModeActivity.TAG, "Error processing image", e)

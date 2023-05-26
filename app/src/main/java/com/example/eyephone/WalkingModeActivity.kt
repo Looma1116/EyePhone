@@ -80,7 +80,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
                 socket = Socket(serverUrl, port)
                 outputStream = DataOutputStream(socket.getOutputStream())
                 inputStream = DataInputStream(socket.getInputStream())
-                var mode = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(0)
+                var mode = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(1)
                     .array()
                 outputStream.write(mode)
                 outputStream.flush()
@@ -118,13 +118,28 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
         val cameraJob = launch(Dispatchers.IO) {
             startCamera(serverUrl, port, imageChannel)
         }
+        val inputJob = launch(Dispatchers.IO) {
+            while (true) {
+                val lengthBytes = ByteArray(4)
+                inputStream.read(lengthBytes)
+                val len = ByteBuffer.wrap(lengthBytes).order(ByteOrder.LITTLE_ENDIAN).int
 
+                val dataBytes = ByteArray(len)
+                inputStream.read(dataBytes)
+                val receivedString = dataBytes.toString(Charsets.UTF_8)
+                println("Received string: $receivedString")
+                //서버에서 받은 문자열 스피커로 출력
+//                setTTS(receivedString)
+//                playTTS(receivedString)
+            }
+        }
 //        val socketJob = launch(Dispatchers.IO) {
 //            startSocket(serverUrl, port, imageChannel)
 //        }
 
         launch {
             cameraJob.join()
+            inputJob.join()
 //            socketJob.join()
         }
     }
@@ -154,11 +169,11 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
             val handlerThread = HandlerThread("CameraThread")
             handlerThread.start()
             val handler = Handler(handlerThread.looper)
-            socket = Socket(serverUrl, port)
-            outputStream = DataOutputStream(socket.getOutputStream())
-            val inputData = launch(Dispatchers.IO) {
-                getData(serverUrl ,port)
-            }
+//            socket = Socket(serverUrl, port)
+//            outputStream = DataOutputStream(socket.getOutputStream())
+//            val inputData = launch(Dispatchers.IO) {
+//                getData(serverUrl ,port)
+//            }
 
 
             val processingJob = Job()
@@ -190,9 +205,9 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
                                             val image = reader.acquireNextImage()
                                             if (image != null) {
                                                 processImage(image)
-                                                delay(44)
+                                                delay(50)
                                                 //서버에서 정보 받기
-                                                inputData.join()
+//                                                inputData.join()
 
                                             } else {
                                                 isProcessingImage = false
@@ -288,8 +303,8 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
 //                    byteArrayOutputStream
 //                )
 //                val jpegBytes = byteArrayOutputStream.toByteArray()
-                launch {
-                    withContext(Dispatchers.IO) {// Send the JPEG byte array to the imageChannel
+//                launch {
+//                    withContext(Dispatchers.IO) {// Send the JPEG byte array to the imageChannel
 //                        val imageSize = jpegBytes.size
                         val imageSize = bytes.size
                         val imageSizeBytes =
@@ -307,8 +322,8 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
 
 //                                                 imageChannel.send(jpegBytes)
 
-                    }
-                }
+//                    }
+//                }
             }
         }catch (e:Exception){
             Log.e(TAG, "Error processing image", e)
@@ -317,24 +332,24 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
         }
 
     }
-    private suspend fun getData(serverUrl: String,
-                                port: Int){
-        socket = Socket(serverUrl, port)
-        inputStream = DataInputStream(socket.getInputStream())
-        val reader = BufferedReader(InputStreamReader(inputStream))
-        val receivedString = reader.readLine()
-        if (receivedString != null && receivedString.isNotEmpty()) {
-            // String received successfully
-            Log.d("Tag", "Received string: $receivedString")
-            //서버에서 받은 문자 스피커로 출력
-            setTTS()
-            playTTS(receivedString)
-        } else {
-            // String not received
-            Log.d("Tag", "String not received or is empty")
-            // Handle the absence of the string, perform appropriate actions or show an error message
-        }
-    }
+//    private suspend fun getData(serverUrl: String,
+//                                port: Int){
+//        socket = Socket(serverUrl, port)
+//        inputStream = DataInputStream(socket.getInputStream())
+//        val reader = BufferedReader(InputStreamReader(inputStream))
+//        val receivedString = reader.readLine()
+//        if (receivedString != null && receivedString.isNotEmpty()) {
+//            // String received successfully
+//            Log.d("Tag", "Received string: $receivedString")
+//            //서버에서 받은 문자 스피커로 출력
+//            setTTS()
+//            playTTS(receivedString)
+//        } else {
+//            // String not received
+//            Log.d("Tag", "String not received or is empty")
+//            // Handle the absence of the string, perform appropriate actions or show an error message
+//        }
+//    }
 //    private suspend fun startSocket(
 //        serverUrl: String,
 //        port: Int,
