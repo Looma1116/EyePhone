@@ -1,7 +1,6 @@
 package com.example.eyephone
 
 import android.Manifest
-import android.R
 import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -12,28 +11,19 @@ import android.hardware.camera2.TotalCaptureResult
 import android.media.Image
 import android.media.ImageReader
 import android.os.*
-import android.speech.RecognitionListener
-import android.speech.RecognizerIntent
-import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.SurfaceView
-import android.view.View
 import android.view.WindowManager
-import android.widget.Button
 import android.widget.ImageView
-import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import java.io.*
 import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.nio.charset.Charset
 import java.util.*
 import java.util.concurrent.Semaphore
 import kotlin.coroutines.CoroutineContext
@@ -42,7 +32,7 @@ import kotlin.coroutines.CoroutineContext
 class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
     private lateinit var camera: android.hardware.camera2.CameraDevice
     private lateinit var surfaceView: SurfaceView
-    private lateinit var streamButton: Button
+
     private lateinit var outputStream: DataOutputStream
     private lateinit var inputStream: DataInputStream
     private lateinit var socket: Socket
@@ -63,37 +53,40 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
         super.onCreate(savedInstanceState)
         setContentView(com.example.eyephone.R.layout.activity_reading_mode)
         job = Job()
+        Thread {
+            //streaming 실행 코드
+            if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(
+                    arrayOf(Manifest.permission.CAMERA),
+                    WalkingModeActivity.CAMERA_PERMISSION_REQUEST_CODE
+                )
+            } else {
+                //화면 켜짐 유지 코드
+                window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        //streaming 실행 코드
-        if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(
-                arrayOf(Manifest.permission.CAMERA),
-                WalkingModeActivity.CAMERA_PERMISSION_REQUEST_CODE
-            )
-        } else {
-            //화면 켜짐 유지 코드
-            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
+                val port = 9999
 
-            val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
-            val port = 9999
+                val socket = Socket(serverUrl, port)
+                outputStream = DataOutputStream(socket.getOutputStream())
+                inputStream = DataInputStream(socket.getInputStream())
+                var mode = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(0)
+                    .array()
+                outputStream.write(mode)
+                outputStream.flush()
 
-            val socket = Socket(serverUrl, port)
-            outputStream = DataOutputStream(socket.getOutputStream())
-            inputStream = DataInputStream(socket.getInputStream())
-            var mode = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(0)
-                .array()
-            outputStream.write(mode)
-            outputStream.flush()
+                startStreaming()
 
-            startStreaming()
-            streamButton.text = "Stop Streaming"
-        }
+            }
+        }.start()
+
+
 
         var backBtn: ImageView = findViewById(com.example.eyephone.R.id.reading_mode_backBtn)
 
         backBtn.setOnClickListener {
             stopStreaming()
-            streamButton.text = "Start Streaming"
+
             val mainIntent = Intent(this, MainActivity::class.java)
             startActivity(mainIntent)
             finish()
@@ -505,7 +498,6 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
         if (requestCode == WalkingModeActivity.CAMERA_PERMISSION_REQUEST_CODE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 startStreaming()
-                streamButton.text = "Stop Streaming"
             } else {
                 //showToast("Camera permission is required.")
             }
@@ -515,7 +507,6 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
         super.onPause()
         if (isStreaming) {
             stopStreaming()
-            streamButton.text = "Start Streaming"
             isStreaming = false
         }
     } override fun onDestroy() {

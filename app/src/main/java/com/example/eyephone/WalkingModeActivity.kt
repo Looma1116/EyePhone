@@ -38,7 +38,6 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
 
     private lateinit var camera: android.hardware.camera2.CameraDevice
     private lateinit var surfaceView: SurfaceView
-    private lateinit var streamButton: Button
     private lateinit var outputStream: DataOutputStream
     private lateinit var inputStream: DataInputStream
     private var isStreaming = false
@@ -62,36 +61,38 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
         setContentView(activity_walking_mode)
         job = Job()
 
-        //streaming 실행 코드
-        if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(
-                arrayOf(Manifest.permission.CAMERA),
-                CAMERA_PERMISSION_REQUEST_CODE
-            )
-        } else {
-            //화면 켜짐 유지 코드
-            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
-            val port = 9999
+        Thread {
+            //streaming 실행 코드
+            if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(
+                    arrayOf(Manifest.permission.CAMERA),
+                    WalkingModeActivity.CAMERA_PERMISSION_REQUEST_CODE
+                )
+            } else {
+                //화면 켜짐 유지 코드
+                window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
+                val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
+                val port = 9999
 
-            val socket = Socket(serverUrl, port)
-            outputStream = DataOutputStream(socket.getOutputStream())
-            var mode = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(1)
-                .array()
-            outputStream.write(mode)
-            outputStream.flush()
+                val socket = Socket(serverUrl, port)
+                outputStream = DataOutputStream(socket.getOutputStream())
+                inputStream = DataInputStream(socket.getInputStream())
+                var mode = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(0)
+                    .array()
+                outputStream.write(mode)
+                outputStream.flush()
 
-            startStreaming()
-            streamButton.text = "Stop Streaming"
-        }
+                startStreaming()
+
+            }
+        }.start()
 
 
         var backBtn: ImageView = findViewById(R.id.walking_mode_backBtn)
 
         backBtn.setOnClickListener {
             stopStreaming()
-            streamButton.text = "Start Streaming"
             val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
             finish()
@@ -401,7 +402,6 @@ private fun playTTS(string: String) {
         if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 startStreaming()
-                streamButton.text = "Stop Streaming"
             } else {
                 //showToast("Camera permission is required.")
             }
@@ -411,7 +411,6 @@ private fun playTTS(string: String) {
         super.onPause()
         if (isStreaming) {
             stopStreaming()
-            streamButton.text = "Start Streaming"
             isStreaming = false
         }
     } override fun onDestroy() {
