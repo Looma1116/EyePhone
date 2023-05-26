@@ -428,15 +428,21 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
     }
 
     private fun setTTS() {
-        tts = TextToSpeech(applicationContext, TextToSpeech.OnInitListener {
-            if (it == TextToSpeech.SUCCESS) {
-                val result = tts!!.setLanguage(Locale.KOREAN)
+        // Initialize the TextToSpeech engine
+        tts = TextToSpeech(applicationContext) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                // Set the language to both Korean and English
+                val result = tts.setLanguage(Locale.KOREAN)
                 if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    Log.e("TTS", "해당언어는 지원되지 않습니다.")
-                    return@OnInitListener
+                    // Failed to set Korean language, handle the error
+                    // You can fallback to English or display an error message
+                } else {
+                    // Language set successfully, you can start using the TTS engine
                 }
+            } else {
+                // TextToSpeech initialization failed, handle the error
             }
-        })
+        }
     }
 
 
