@@ -139,8 +139,8 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
                 val receivedString = dataBytes.toString(Charsets.UTF_8)
                 println("Received string: $receivedString")
                 //서버에서 받은 문자열 스피커로 출력
-                setTTS()
-                playTTS(receivedString)
+                setTTS(receivedString)
+//                playTTS(receivedString)
             }
         }
 //        val socketJob = launch(Dispatchers.IO) {
@@ -427,18 +427,26 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
         tts.shutdown()
     }
 
-    private fun setTTS() {
+    private fun setTTS(text: String) {
         // Initialize the TextToSpeech engine
         tts = TextToSpeech(applicationContext) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                // Set the language to both Korean and English
-                val result = tts.setLanguage(Locale.KOREAN)
-                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    // Failed to set Korean language, handle the error
-                    // You can fallback to English or display an error message
+                val language = detectLanguage(text)
+
+                if (language == "ko") {
+                    val result = tts.setLanguage(Locale.KOREAN)
                 } else {
-                    // Language set successfully, you can start using the TTS engine
+                    val result = tts.setLanguage(Locale.ENGLISH)
                 }
+                // Set the language to both Korean and English
+//                val result = tts.setLanguage(Locale.KOREAN)
+//                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+//                    // Failed to set Korean language, handle the error
+//                    // You can fallback to English or display an error message
+//                } else {
+//                    // Language set successfully, you can start using the TTS engine
+//                }
+                tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
             } else {
                 // TextToSpeech initialization failed, handle the error
             }
