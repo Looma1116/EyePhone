@@ -44,6 +44,8 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
     private var streamingConfirm = false
     private lateinit var imageReader: ImageReader
     private var tts:TextToSpeech?=null
+    private lateinit var socket: Socket
+
     companion object {
         const val TAG = "WalkingModeActivity"
         const val CAMERA_PERMISSION_REQUEST_CODE = 100
@@ -75,7 +77,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
                 val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
                 val port = 9999
 
-                val socket = Socket(serverUrl, port)
+                socket = Socket(serverUrl, port)
                 outputStream = DataOutputStream(socket.getOutputStream())
                 inputStream = DataInputStream(socket.getInputStream())
                 var mode = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(0)
@@ -152,7 +154,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
             val handlerThread = HandlerThread("CameraThread")
             handlerThread.start()
             val handler = Handler(handlerThread.looper)
-            val socket = Socket(serverUrl, port)
+            socket = Socket(serverUrl, port)
             outputStream = DataOutputStream(socket.getOutputStream())
             val inputData = launch(Dispatchers.IO) {
                 getData(serverUrl ,port)
@@ -317,7 +319,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
     }
     private suspend fun getData(serverUrl: String,
                                 port: Int){
-        val socket = Socket(serverUrl, port)
+        socket = Socket(serverUrl, port)
         inputStream = DataInputStream(socket.getInputStream())
         val reader = BufferedReader(InputStreamReader(inputStream))
         val receivedString = reader.readLine()
@@ -383,6 +385,8 @@ private fun playTTS(string: String) {
             streamingConfirm = false
             outputStream.close()
             inputStream.close()
+            socket?.close()
+
             if (::imageReader.isInitialized) {
                 imageReader.close()
             }

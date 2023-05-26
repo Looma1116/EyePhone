@@ -32,7 +32,6 @@ import kotlin.coroutines.CoroutineContext
 class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
     private lateinit var camera: android.hardware.camera2.CameraDevice
     private lateinit var surfaceView: SurfaceView
-
     private lateinit var outputStream: DataOutputStream
     private lateinit var inputStream: DataInputStream
     private lateinit var socket: Socket
@@ -67,7 +66,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
                 val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
                 val port = 9999
 
-                val socket = Socket(serverUrl, port)
+                socket = Socket(serverUrl, port)
                 outputStream = DataOutputStream(socket.getOutputStream())
                 inputStream = DataInputStream(socket.getInputStream())
                 var mode = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(0)
@@ -407,7 +406,8 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
     fun playTTS(text: String) {
         // Set the Utterance ID to identify the speech
         val utteranceId = UUID.randomUUID().toString()
-
+        //tts초기화
+        tts = TextToSpeech(applicationContext, null)
         // Set the language based on the detected language of the text
         val language = detectLanguage(text)
         if (language == "ko") {
