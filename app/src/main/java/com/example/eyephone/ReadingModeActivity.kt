@@ -449,13 +449,13 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
 
     private fun stopStreaming() {
         try {
-            camera.close()
             streamingConfirm = false
-            outputStream.close()
-            inputStream.close()
-            socket.close()
+            outputStream?.close()
+            inputStream?.close()
+            socket?.close()
             shutdownTTS()
 
+            camera?.close()
             if (::imageReader.isInitialized) {
                 imageReader.close()
             }
