@@ -62,6 +62,30 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
         setContentView(activity_walking_mode)
         job = Job()
 
+        //streaming 실행 코드
+        if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(
+                arrayOf(Manifest.permission.CAMERA),
+                CAMERA_PERMISSION_REQUEST_CODE
+            )
+        } else {
+            //화면 켜짐 유지 코드
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
+            val port = 9999
+
+
+            val socket = Socket(serverUrl, port)
+            outputStream = DataOutputStream(socket.getOutputStream())
+            var mode = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(1)
+                .array()
+            outputStream.write(mode)
+            outputStream.flush()
+
+            startStreaming()
+            streamButton.text = "Stop Streaming"
+        }
+
 
         var backBtn: ImageView = findViewById(R.id.walking_mode_backBtn)
 
@@ -79,42 +103,8 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
         StrictMode.setThreadPolicy(policy)
 
         surfaceView = findViewById(R.id.surfaceView)
-        streamButton = findViewById(R.id.streamButton)
 
 
-
-        streamButton.setOnClickListener {
-            if (isStreaming) {
-                stopStreaming()
-                //화면 켜짐 유지 해제 코드
-                window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-                streamButton.text = "Start Streaming"
-            } else {
-                if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                    requestPermissions(
-                        arrayOf(Manifest.permission.CAMERA),
-                        CAMERA_PERMISSION_REQUEST_CODE
-                    )
-                } else {
-                    //화면 켜짐 유지 코드
-                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                    val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
-                    val port = 9999
-
-
-                    val socket = Socket(serverUrl, port)
-                    outputStream = DataOutputStream(socket.getOutputStream())
-                    var mode = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(1)
-                        .array()
-                    outputStream.write(mode)
-                    outputStream.flush()
-
-                    startStreaming()
-                    streamButton.text = "Stop Streaming"
-                }
-            }
-            isStreaming = !isStreaming
-        }
     }
 
     private fun startStreaming() {

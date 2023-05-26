@@ -103,7 +103,6 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
         StrictMode.setThreadPolicy(policy)
 
         surfaceView = findViewById(com.example.eyephone.R.id.reading_surfaceView)
-        streamButton = findViewById(com.example.eyephone.R.id.reading_streamButton)
 
 
       /*  streamButton.setOnClickListener {
