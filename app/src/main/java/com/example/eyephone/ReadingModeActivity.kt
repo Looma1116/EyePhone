@@ -32,6 +32,7 @@ import java.io.*
 import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.charset.Charset
 import java.util.*
 import java.util.concurrent.Semaphore
 import kotlin.coroutines.CoroutineContext
@@ -128,11 +129,18 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
         }
 
         val inputJob = launch(Dispatchers.IO) {
-            while (inputStream.available() > 0) {
-                val message = inputStream.readUTF()
-                println("Received message: $message")
-                // 메시지를 받은 후 추가적인 작업 수행
-                // ...
+            while (true) {
+                val lengthBytes = ByteArray(4)
+                inputStream.read(lengthBytes)
+                val len = ByteBuffer.wrap(lengthBytes).order(ByteOrder.LITTLE_ENDIAN).int
+
+                val dataBytes = ByteArray(len)
+                inputStream.read(dataBytes)
+                val receivedString = dataBytes.toString(Charsets.UTF_8)
+                println("Received string: $receivedString")
+                //서버에서 받은 문자열 스피커로 출력
+                setTTS()
+                playTTS(receivedString)
             }
         }
 //        val socketJob = launch(Dispatchers.IO) {
@@ -190,7 +198,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
 //                        val preview_image_format = ImageFormat.YUV_420_888
                         val preview_image_format = ImageFormat.JPEG
                         val imageReader = ImageReader.newInstance(
-                            surfaceView.width/2, surfaceView.height/2, preview_image_format, 32
+                            surfaceView.width/3, surfaceView.height/3, preview_image_format, 32
                         )
 
                         val ImageAvailableListener: (ImageReader) -> Unit =
