@@ -104,7 +104,9 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
 
                     val socket = Socket(serverUrl, port)
                     outputStream = DataOutputStream(socket.getOutputStream())
-                    outputStream.writeInt(1)
+                    var mode = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(1)
+                        .array()
+                    outputStream.write(mode)
                     outputStream.flush()
 
                     startStreaming()

@@ -101,7 +101,10 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
 
                     val socket = Socket(serverUrl, port)
                     outputStream = DataOutputStream(socket.getOutputStream())
-                    outputStream.writeInt(0)
+                    inputStream = DataInputStream(socket.getInputStream())
+                    var mode = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(0)
+                        .array()
+                    outputStream.write(mode)
                     outputStream.flush()
 
                     startStreaming()
@@ -123,11 +126,21 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
         val cameraJob = launch(Dispatchers.IO) {
             startCamera(serverUrl, port, imageChannel)
         }
+
+        val inputJob = launch(Dispatchers.IO) {
+            while (true) {
+                val message = inputStream.readUTF()
+                println("Received message: $message")
+                // 메시지를 받은 후 추가적인 작업 수행
+                // ...
+            }
+        }
 //        val socketJob = launch(Dispatchers.IO) {
 //            startSocket(serverUrl, port, imageChannel)
 //        }
         launch {
             cameraJob.join()
+            inputJob.join()
 //            socketJob.join()
         }
     }
@@ -163,6 +176,9 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
             val processingJob = Job()
             val processingScope = CoroutineScope(Dispatchers.IO + processingJob)
 
+//            val inputData = launch(Dispatchers.IO) {
+//                getData(serverUrl ,port)
+//            }
 
 
             cameraManager.openCamera(
@@ -192,7 +208,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
                                             if (image != null) {
                                                 processImage(image)
                                                 delay(44)
-                                                getData(serverUrl ,port)
+//                                                getData(serverUrl ,port)
                                             } else {
                                                 isProcessingImage = false
                                             }
@@ -317,24 +333,24 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
         }
 
     }
-    private suspend fun getData(serverUrl: String,
-                                port: Int){
-        val socket = Socket(serverUrl, port)
-        inputStream = DataInputStream(socket.getInputStream())
-        val reader = BufferedReader(InputStreamReader(inputStream))
-        val receivedString = reader.readLine()
-        if (receivedString != null && receivedString.isNotEmpty()) {
-            // String received successfully
-            Log.d("Tag", "Received string: $receivedString")
-            //서버에서 받은 문자열 스피커로 출력
-            // setTTS()
-            //playTTS(receivedString)
-        } else {
-            // String not received
-            Log.d("Tag", "String not received or is empty")
-            // Handle the absence of the string, perform appropriate actions or show an error message
-        }
-    }
+//    private suspend fun getData(serverUrl: String,
+//                                port: Int){
+//        val socket = Socket(serverUrl, port)
+//        inputStream = DataInputStream(socket.getInputStream())
+//        val reader = BufferedReader(InputStreamReader(inputStream))
+//        val receivedString = reader.readLine()
+//        if (receivedString != null && receivedString.isNotEmpty()) {
+//            // String received successfully
+//            Log.d("Tag", "Received string: $receivedString")
+//            //서버에서 받은 문자열 스피커로 출력
+//            // setTTS()
+//            //playTTS(receivedString)
+//        } else {
+//            // String not received
+//            Log.d("Tag", "String not received or is empty")
+//            // Handle the absence of the string, perform appropriate actions or show an error message
+//        }
+//    }
 
     //    private suspend fun startSocket(
 //        serverUrl: String,
