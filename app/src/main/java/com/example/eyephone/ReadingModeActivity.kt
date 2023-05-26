@@ -128,7 +128,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
         }
 
         val inputJob = launch(Dispatchers.IO) {
-            while (true) {
+            while (inputStream.available() > 0) {
                 val message = inputStream.readUTF()
                 println("Received message: $message")
                 // 메시지를 받은 후 추가적인 작업 수행
