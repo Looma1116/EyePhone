@@ -95,6 +95,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
                 } else {
                     //화면 켜짐 유지 코드
                     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
                     val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
                     val port = 9999
 
@@ -162,9 +163,6 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
             val processingJob = Job()
             val processingScope = CoroutineScope(Dispatchers.IO + processingJob)
 
-            val inputData = launch(Dispatchers.IO) {
-                getData(serverUrl ,port)
-            }
 
 
             cameraManager.openCamera(
@@ -194,8 +192,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
                                             if (image != null) {
                                                 processImage(image)
                                                 delay(44)
-                                                //서버에서 정보 받기
-                                                inputData.join()
+                                                getData(serverUrl ,port)
                                             } else {
                                                 isProcessingImage = false
                                             }
@@ -266,24 +263,6 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
             e.printStackTrace()
         }
     }
-    private suspend fun getData(serverUrl: String,
-                                port: Int){
-        val socket = Socket(serverUrl, port)
-        inputStream = DataInputStream(socket.getInputStream())
-        val reader = BufferedReader(InputStreamReader(inputStream))
-        val receivedString = reader.readLine()
-        if (receivedString != null && receivedString.isNotEmpty()) {
-            // String received successfully
-            Log.d("Tag", "Received string: $receivedString")
-            //서버에서 받은 문자열 스피커로 출력
-            setTTS()
-            playTTS(receivedString)
-        } else {
-            // String not received
-            Log.d("Tag", "String not received or is empty")
-            // Handle the absence of the string, perform appropriate actions or show an error message
-        }
-    }
 
     suspend fun processImage(image: Image){
         try {
@@ -338,7 +317,26 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
         }
 
     }
-//    private suspend fun startSocket(
+    private suspend fun getData(serverUrl: String,
+                                port: Int){
+        val socket = Socket(serverUrl, port)
+        inputStream = DataInputStream(socket.getInputStream())
+        val reader = BufferedReader(InputStreamReader(inputStream))
+        val receivedString = reader.readLine()
+        if (receivedString != null && receivedString.isNotEmpty()) {
+            // String received successfully
+            Log.d("Tag", "Received string: $receivedString")
+            //서버에서 받은 문자열 스피커로 출력
+            // setTTS()
+            //playTTS(receivedString)
+        } else {
+            // String not received
+            Log.d("Tag", "String not received or is empty")
+            // Handle the absence of the string, perform appropriate actions or show an error message
+        }
+    }
+
+    //    private suspend fun startSocket(
 //        serverUrl: String,
 //        port: Int,
 //        imageChannel: Channel<ByteArray>
