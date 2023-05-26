@@ -41,6 +41,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
     private val imageProcessingSemaphore = Semaphore(2)
     private lateinit var tts:TextToSpeech
 
+
     @Volatile
     private var isProcessingImage = false
     private lateinit var job: Job
@@ -51,9 +52,26 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(com.example.eyephone.R.layout.activity_reading_mode)
+        surfaceView = findViewById(com.example.eyephone.R.id.reading_surfaceView)
+
         job = Job()
+
+        // Initializing the properties
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        val fileOutputStream: OutputStream = byteArrayOutputStream
+        outputStream = DataOutputStream(fileOutputStream)
+        val byteArray = byteArrayOf(1, 2, 3, 4, 5)
+        val fileInputStream: InputStream = ByteArrayInputStream(byteArray)
+        inputStream = DataInputStream(fileInputStream)
+        imageReader = ImageReader.newInstance(1, 1, ImageFormat.JPEG, 1) // Initialize the image reader with your desired width and height
+        tts = TextToSpeech(applicationContext, null) // Initialize the TextToSpeech object with your desired context
+
+
+
+        //streaming 실행 코드
         Thread {
-            //streaming 실행 코드
+
+
             if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(
                     arrayOf(Manifest.permission.CAMERA),
@@ -62,11 +80,11 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
             } else {
                 //화면 켜짐 유지 코드
                 window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
                 val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
                 val port = 9999
 
                 socket = Socket(serverUrl, port)
+
                 outputStream = DataOutputStream(socket.getOutputStream())
                 inputStream = DataInputStream(socket.getInputStream())
                 var mode = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(0)
@@ -94,43 +112,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
         val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
         StrictMode.setThreadPolicy(policy)
 
-        surfaceView = findViewById(com.example.eyephone.R.id.reading_surfaceView)
 
-
-      /*  streamButton.setOnClickListener {
-            if (isStreaming) {
-                stopStreaming()
-                //화면 켜짐 유지 해제 코드
-                window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-                streamButton.text = "Start Streaming"
-            } else {
-                if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                    requestPermissions(
-                        arrayOf(Manifest.permission.CAMERA),
-                        WalkingModeActivity.CAMERA_PERMISSION_REQUEST_CODE
-                    )
-                } else {
-                    //화면 켜짐 유지 코드
-                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
-                    val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
-                    val port = 9999
-
-                    val socket = Socket(serverUrl, port)
-                    outputStream = DataOutputStream(socket.getOutputStream())
-                    inputStream = DataInputStream(socket.getInputStream())
-                    var mode = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(0)
-                        .array()
-                    outputStream.write(mode)
-                    outputStream.flush()
-
-                    startStreaming()
-                    streamButton.text = "Stop Streaming"
-                }
-            }
-            isStreaming = !isStreaming
-        }
-*/
 
     }
 
