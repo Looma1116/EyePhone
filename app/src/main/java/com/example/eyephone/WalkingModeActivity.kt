@@ -43,7 +43,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
     private var isStreaming = false
     private var streamingConfirm = false
     private lateinit var imageReader: ImageReader
-    private var tts:TextToSpeech?=null
+    private lateinit var tts:TextToSpeech
     private lateinit var socket: Socket
 
     companion object {
@@ -84,7 +84,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
                     .array()
                 outputStream.write(mode)
                 outputStream.flush()
-
+                tts = TextToSpeech(applicationContext, null) // Initialize the TextToSpeech object with your desired context
                 startStreaming()
 
             }
@@ -129,7 +129,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
                 val receivedString = dataBytes.toString(Charsets.UTF_8)
                 println("Received string: $receivedString")
                 //서버에서 받은 문자열 스피커로 출력
-//                setTTS(receivedString)
+                setTTS(receivedString)
 //                playTTS(receivedString)
             }
         }
@@ -377,22 +377,54 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
 //            e.printStackTrace()
 //        }
 //    }
-private fun playTTS(string: String) {
-    tts?.speak(string, TextToSpeech.QUEUE_FLUSH, null, "")
-    tts?.playSilentUtterance(750, TextToSpeech.QUEUE_ADD,null) // deley시간 설정
-}
+    fun detectLanguage(text: String): String {
+        // Use a language detection library or API to detect the language of the text
+        // Return the language code (e.g., "ko" for Korean, "en" for English)
+        // If the language detection library is not available, you can consider using a rule-based approach or fallback to a default language
+        // Here's an example using ML Kit Language Identification API:
+        // val languageIdentifier = LanguageIdentification.getClient()
+        // val task = languageIdentifier.identifyLanguage(text)
+        // val result = Tasks.await(task)
+        // return result.languageTag
 
-    private fun setTTS() {
-        tts = TextToSpeech(applicationContext, TextToSpeech.OnInitListener {
-            if (it == TextToSpeech.SUCCESS) {
-                val result = tts!!.setLanguage(Locale.KOREAN)
-                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    Log.e("TTS", "해당언어는 지원되지 않습니다.")
-                    return@OnInitListener
-                }
-            }
-        })
+        // For demonstration purposes, let's assume we have a simple rule-based language detector
+        return if (text.contains(Regex("[가-힣]"))) {
+            "ko" // Korean
+        } else {
+            "en" // English
+        }
     }
+    private fun playTTS(string: String) {
+        tts?.speak(string, TextToSpeech.QUEUE_FLUSH, null, "")
+        tts?.playSilentUtterance(750, TextToSpeech.QUEUE_ADD,null) // deley시간 설정
+    }
+
+    private fun setTTS(text: String) {
+        // Initialize the TextToSpeech engine
+        tts = TextToSpeech(applicationContext) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                val language = detectLanguage(text)
+
+                if (language == "ko") {
+                    val result = tts.setLanguage(Locale.KOREAN)
+                } else {
+                    val result = tts.setLanguage(Locale.ENGLISH)
+                }
+                // Set the language to both Korean and English
+    //                val result = tts.setLanguage(Locale.KOREAN)
+    //                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+    //                    // Failed to set Korean language, handle the error
+    //                    // You can fallback to English or display an error message
+    //                } else {
+    //                    // Language set successfully, you can start using the TTS engine
+    //                }
+                tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
+            } else {
+                // TextToSpeech initialization failed, handle the error
+            }
+        }
+    }
+
 
     private fun stopStreaming() {
         try {
