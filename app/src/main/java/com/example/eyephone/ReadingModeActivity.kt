@@ -34,7 +34,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
     private lateinit var surfaceView: SurfaceView
     private lateinit var outputStream: DataOutputStream
     private lateinit var inputStream: DataInputStream
-    private lateinit var socket: Socket
+    private  var socket = Socket()
     private var isStreaming = false
     private var streamingConfirm = false
     private lateinit var imageReader: ImageReader
@@ -60,9 +60,13 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
         val byteArrayOutputStream = ByteArrayOutputStream()
         val fileOutputStream: OutputStream = byteArrayOutputStream
         outputStream = DataOutputStream(fileOutputStream)
+
         val byteArray = byteArrayOf(1, 2, 3, 4, 5)
         val fileInputStream: InputStream = ByteArrayInputStream(byteArray)
         inputStream = DataInputStream(fileInputStream)
+
+
+
         imageReader = ImageReader.newInstance(1, 1, ImageFormat.JPEG, 1) // Initialize the image reader with your desired width and height
         tts = TextToSpeech(applicationContext, null) // Initialize the TextToSpeech object with your desired context
 
@@ -80,10 +84,12 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
             } else {
                 //화면 켜짐 유지 코드
                 window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
                 val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
                 val port = 9999
 
                 socket = Socket(serverUrl, port)
+
 
                 outputStream = DataOutputStream(socket.getOutputStream())
                 inputStream = DataInputStream(socket.getInputStream())
@@ -445,7 +451,10 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
 //                } else {
 //                    // Language set successfully, you can start using the TTS engine
 //                }
+                val speechRate = 0.5f // Adjust this value as needed (1.0f is the default rate)
+                tts.setSpeechRate(speechRate) //tts 전송 속도
                 tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
+
             } else {
                 // TextToSpeech initialization failed, handle the error
             }
@@ -462,7 +471,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
             socket?.close()
             shutdownTTS()
 
-            camera?.close()
+
             if (::imageReader.isInitialized) {
                 imageReader.close()
             }

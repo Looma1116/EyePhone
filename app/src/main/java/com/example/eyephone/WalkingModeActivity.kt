@@ -44,7 +44,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
     private var streamingConfirm = false
     private lateinit var imageReader: ImageReader
     private lateinit var tts:TextToSpeech
-    private lateinit var socket: Socket
+    private  var socket = Socket()
 
     companion object {
         const val TAG = "WalkingModeActivity"
@@ -63,7 +63,27 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
         setContentView(activity_walking_mode)
         job = Job()
 
+        // Initializing the properties
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        val fileOutputStream: OutputStream = byteArrayOutputStream
+        outputStream = DataOutputStream(fileOutputStream)
+
+        val byteArray = byteArrayOf(1, 2, 3, 4, 5)
+        val fileInputStream: InputStream = ByteArrayInputStream(byteArray)
+        inputStream = DataInputStream(fileInputStream)
+
+        initializeSocket()
+
+
+        imageReader = ImageReader.newInstance(1, 1, ImageFormat.JPEG, 1) // Initialize the image reader with your desired width and height
+        tts = TextToSpeech(applicationContext, null) // Initialize the TextToSpeech object with your desired context
+
+
+
         Thread {
+            val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
+            val port = 9999
+            socket = Socket(serverUrl, port)
             //streaming 실행 코드
             if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(
@@ -74,10 +94,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
                 //화면 켜짐 유지 코드
                 window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-                val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
-                val port = 9999
 
-                socket = Socket(serverUrl, port)
                 outputStream = DataOutputStream(socket.getOutputStream())
                 inputStream = DataInputStream(socket.getInputStream())
                 var mode = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(1)
@@ -108,6 +125,22 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
         surfaceView = findViewById(R.id.surfaceView)
 
 
+    }
+
+    fun initializeSocket() {
+        GlobalScope.launch(Dispatchers.IO) {
+            try {
+                // Perform socket initialization and network operations here
+
+
+                // Use the socket for further communication or data exchange
+
+
+            } catch (e: IOException) {
+                // Handle any exceptions that occur during socket initialization or network operations
+                e.printStackTrace()
+            }
+        }
     }
 
     private fun startStreaming() {
@@ -418,7 +451,10 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
     //                } else {
     //                    // Language set successfully, you can start using the TTS engine
     //                }
+                val speechRate = 0.5f // Adjust this value as needed (1.0f is the default rate)
+                tts.setSpeechRate(speechRate) //tts 전송 속도
                 tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
+
             } else {
                 // TextToSpeech initialization failed, handle the error
             }
@@ -428,11 +464,11 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
 
     private fun stopStreaming() {
         try {
-            camera.close()
+
             streamingConfirm = false
             outputStream.close()
             inputStream.close()
-            socket?.close()
+            socket.close()
 
             if (::imageReader.isInitialized) {
                 imageReader.close()
