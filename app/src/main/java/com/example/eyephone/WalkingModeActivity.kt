@@ -451,7 +451,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
     //                } else {
     //                    // Language set successfully, you can start using the TTS engine
     //                }
-                val speechRate = 0.5f // Adjust this value as needed (1.0f is the default rate)
+                val speechRate = 2.0f // default 에서 속도 2배로 수정(1.0f is the default rate)
                 tts.setSpeechRate(speechRate) //tts 전송 속도
                 tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
 
