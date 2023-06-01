@@ -85,7 +85,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
                 //화면 켜짐 유지 코드
                 window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-                val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
+                val serverUrl = "14.40.78.234"//"112.187.163.193"//"10.0.2.2" //localhost
                 val port = 9999
 
                 socket = Socket(serverUrl, port)
@@ -123,7 +123,7 @@ class ReadingModeActivity: AppCompatActivity() ,CoroutineScope {
     }
 
     private fun startStreaming() {
-        val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
+        val serverUrl = "14.40.78.234"//"112.187.163.193"//"10.0.2.2" //localhost
         val port = 9999
 
 

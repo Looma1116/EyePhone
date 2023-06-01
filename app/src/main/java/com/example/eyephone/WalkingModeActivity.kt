@@ -44,7 +44,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
     private var streamingConfirm = false
     private lateinit var imageReader: ImageReader
     private lateinit var tts:TextToSpeech
-    private  var socket = Socket()
+    private lateinit var socket: Socket
 
     companion object {
         const val TAG = "WalkingModeActivity"
@@ -81,7 +81,7 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
 
 
         Thread {
-            val serverUrl = "112.187.163.193"//"10.0.2.2" //localhost
+            val serverUrl = "14.40.78.234"//"112.187.163.193"//"10.0.2.2" //localhost
             val port = 9999
             socket = Socket(serverUrl, port)
             //streaming 실행 코드
@@ -94,7 +94,9 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
                 //화면 켜짐 유지 코드
                 window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-
+//                val serverUrl = "14.40.78.234"//"112.187.163.193"//"10.0.2.2" //localhost
+//                val port = 9999
+//                socket = Socket(serverUrl, port)
                 outputStream = DataOutputStream(socket.getOutputStream())
                 inputStream = DataInputStream(socket.getInputStream())
                 var mode = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(1)
@@ -454,7 +456,6 @@ class WalkingModeActivity: AppCompatActivity() ,CoroutineScope {
                 val speechRate = 2.0f // default 에서 속도 2배로 수정(1.0f is the default rate)
                 tts.setSpeechRate(speechRate) //tts 전송 속도
                 tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
-
             } else {
                 // TextToSpeech initialization failed, handle the error
             }
